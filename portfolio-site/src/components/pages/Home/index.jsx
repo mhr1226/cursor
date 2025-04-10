@@ -4,6 +4,7 @@ import { Container, Section, Heading, Text, Button, Grid, Card, CardBody, CardHe
 import { createClient } from "microcms-js-sdk";
 import ProfilePic from '../../../assets/profile.png'; // プロフィール画像のインポート
 
+// microCMSの設定
 const client = createClient({
   serviceDomain: "portfolio-test1",
   apiKey: "rY1kOhCDy19nhE0KvjvFaHZTTNZgSrJLUXdh",
@@ -12,22 +13,44 @@ const client = createClient({
 
 const Home = () => {
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [thumbnail, setThumbnail] = useState(null);
+  // blog用のuseState
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogContent, setBlogContent] = useState("");
+  const [blogThumbnail, setBlogThumbnail] = useState(null);
 
+  // works用のuseState
+  const [worksItems, setWorksItems] = useState([]);
+  
+
+  // blog用のuseEffect
   useEffect(() => {
-    client
-      .get({
+    // エンドポイントの取得
+
+    const BlogPromise = client.get({
         endpoint: "blog",
-      })
-      .then((res) => {
-        console.log('API Response:', res); // レスポンスの構造を確認
-        setTitle(res.title);
-        setContent(res.content);
-        setThumbnail(res.thumbnail || null);
+      });
+
+      // APIレスポンスが成功した場合の処理
+      BlogPromise.then((res) => {
+        // console.log('API Response:', res); // レスポンスの構造を確認
+        setBlogTitle(res.title);
+        setBlogContent(res.content);
+        setBlogThumbnail(res.thumbnail || null);
       })
       .catch((err) => console.log(err));
+  }, []);
+
+  // works用のuseEffect
+  useEffect(() => {
+    const WorksPromise = client.get({
+      endpoint: "works",
+    });
+
+  WorksPromise.then((res) => {
+    console.log('API Response:', res.contents);
+    setWorksItems(res.contents);
+    })
+    .catch((err) => console.log(err));
   }, []);
 
   return (
@@ -84,13 +107,13 @@ const Home = () => {
               {[1, 2, 3].map((item) => (
                 <Card key={item}>
                   <CardHeader>
-                    <Heading $size="xl">{title} {item}</Heading>
+                    <Heading $size="xl">{blogTitle} {item}</Heading>
                   </CardHeader>
                   <CardBody>
-                    <Text dangerouslySetInnerHTML={{ __html: content }} $mb="4">
+                    <Text dangerouslySetInnerHTML={{ __html: blogContent }} $mb="4">
                     
                     </Text>
-                    {thumbnail && <img src={thumbnail.url} alt="サムネイル" />}
+                    {blogThumbnail && <img src={blogThumbnail.url} alt="サムネイル" />}
                     <Button $variant="outlined">詳細を見る</Button>
                   </CardBody>
                 </Card>
@@ -105,14 +128,14 @@ const Home = () => {
           <Heading $align="center" $mb="8">ブログ記事</Heading>
           <SectionBlog>
             <Grid $columnsmd="repeat(2, 1fr)" $gap="6">
-              {[1, 2].map((item) => (
-                <Card key={item}>
+              {worksItems.map((workItem) => (
+                <Card key={workItem.id}>
                   <CardBody>
-                    <Heading $size="lg">ブログ記事タイトル {item}</Heading>
+                    <Heading $size="lg">{workItem.title}</Heading>
                     <Text $color="gray600" $size="sm" $mb="2">2023年1月1日</Text>
-                    <Text $mb="4">
-                      ブログ記事の要約がここに入ります。興味を引くような内容を簡潔に表現しています。
+                    <Text $mb="4" dangerouslySetInnerHTML={{ __html: workItem.content }}>
                     </Text>
+                    {workItem.thumbnail && <img src={workItem.thumbnail.url} alt="サムネイル" />}
                     <Button $variant="text">続きを読む</Button>
                   </CardBody>
                 </Card>
